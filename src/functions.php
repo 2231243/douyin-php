@@ -1,7 +1,5 @@
 <?php
 
-namespace lff\DouyinPhp;
-
 function Invoke($url, $data = null, $headers = null)
 {
     $curl = curl_init();

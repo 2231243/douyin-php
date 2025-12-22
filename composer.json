@@ -1,7 +1,8 @@
 {
     "name": "lff/douyin-php",
     "autoload": {
-        "psr-4": {
+      "files": ["src/functions.php"],
+      "psr-4": {
             "lff\\DouyinPhp\\": "src/"
         }
     },
