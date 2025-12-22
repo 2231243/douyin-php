@@ -1,0 +1,15 @@
+{
+    "name": "lxl/douyin-php",
+    "autoload": {
+        "psr-4": {
+            "Lxl\\DouyinPhp\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "lff",
+            "email": "791173719@qq.com"
+        }
+    ],
+    "require": {}
+}
