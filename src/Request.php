@@ -2,7 +2,7 @@
 
 namespace lff\DouyinPhp;
 
-function Request($url, $data = null, $headers = null)
+function Invoke($url, $data = null, $headers = null)
 {
     $curl = curl_init();
     $defaultHeaders = array(

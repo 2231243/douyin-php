@@ -27,7 +27,7 @@ class GenerateToken
     public function authToken()
     {
         try {
-            $resp = Request($this->authorizedAddress, [
+            $resp = Invoke($this->authorizedAddress, [
                 'app_code' => $this->appCode,
                 'jwt_key' => $this->generateJwtKey()
             ]);

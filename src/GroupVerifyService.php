@@ -127,7 +127,7 @@ class GroupVerifyService
             $header = $this->initHeader();
 
 
-            $response = \lff\DouyinPhp\Request( $url, $data, $header);
+            $response = Invoke( $url, $data, $header);
 
             $result = json_decode($response, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
