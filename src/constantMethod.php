@@ -27,4 +27,9 @@ class constantMethod
     const ConfigList = "config/list";
     const SetNoAssociateCanUse = "config/not-associate-can-use";
 
+    public static function getAllConstants()
+    {
+        $reflection = new \ReflectionClass(static::class);
+        return array_values($reflection->getConstants());
+    }
 }

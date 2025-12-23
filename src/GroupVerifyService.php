@@ -32,55 +32,64 @@ class GroupVerifyService
      * 支持的接口方法
      * @var array
      */
-    protected $serviceImpl = [
-        'shop/auth-link', //门店授权url
-        'shop/query-shop', //门店查询
-        'product/list',//商品列表
-        'coupon/ready', //验券准备
-        'coupon/ticket', //验券
-        'coupon/detail', //核销详情
-        'coupon/cancel', //撤销核销
-        'shop/unbind',//解除绑定
-        'ota/list', //获取白名单
-        'ota/site-query',//查询场所信息
-        'ota/create', // 创建Ota白名单
-        'ota/delete', // 删除ota白名单
-        "product/relation", //商品与抖音
-        "product/mapping-list",// 场所商品所绑定的商品列表
-        "product/remove-relation", //解除商品与抖音商品关联
-        "config/list", //配置规则列表
-        "config/not-associate-can-use" // 未关联商品能否使用券码
-    ];
+    protected $serviceImpl;
 
     public function __construct($config = null)
     {
-        $this->initConfig($config);
+
+        $this->config = $this->resolveConfig($config);
+        $this->validateConfig();
+        $this->serviceImpl = constantMethod::getAllConstants();
 
         $this->generateTokenService = new GenerateToken(
             $this->config['app_code'], $this->config['app_key'], $this->config['app_secret'], $this->config['auth_url']
         );
 
     }
-
     /**
-     * 初始化配置
-     * @param array|null $config 自定义配置
-     * @throws RuntimeException 配置异常
+     * 解析配置：支持多种注入方式
+     * @param array|string|null $config
+     * @throws RuntimeException
      */
-    private function initConfig($config)
+    private function resolveConfig($config)
     {
-        if ($config) {
-            $this->config = $config;
+        // 方式1：直接传入配置数组（优先级最高）
+        if (is_array($config)) {
+            return $config;
         }
-        // 验证必要配置项
-        $requiredConfig = ['app_code', 'app_key', 'app_secret', 'auth_url', 'douyin_group_server_url'];
-        foreach ($requiredConfig as $item) {
-            if (empty($this->config[$item])) {
-                throw new RuntimeException("抖音团购配置缺失必要项：{$item}");
+
+        // 方式2：传入配置文件路径
+        if (is_string($config)) {
+            return $this->loadConfigFromFile($config);
+        }
+
+        throw new RuntimeException('未注入抖音团购配置！请传入配置数组/配置文件路径');
+    }
+    /**
+     * 从文件加载配置
+     * @param string $filePath
+     * @throws RuntimeException
+     */
+    private function loadConfigFromFile(string $filePath)
+    {
+        if (!file_exists($filePath)) {
+            throw new RuntimeException("配置文件不存在：{$filePath}");
+        }
+        return require $filePath;
+    }
+    /**
+     * 验证配置完整性
+     * @throws RuntimeException
+     */
+    private function validateConfig()
+    {
+        $required = ['app_code', 'app_key', 'app_secret', 'auth_url', 'douyin_group_server_url'];
+        foreach ($required as $key) {
+            if (empty($this->config[$key])) {
+                throw new RuntimeException("抖音团购配置缺失必要项：{$key}");
             }
         }
     }
-
     /**
      * @throws Exception
      */
@@ -91,17 +100,13 @@ class GroupVerifyService
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
-        $jwtResult = json_decode($resp, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Invalid JSON: ' . json_last_error_msg());
-        }
-        if ($jwtResult["code"] != 0) {
-            throw new Exception($jwtResult["message"]);
+        if ($resp["code"] != 0) {
+            throw new Exception($resp["message"]);
         }
 
-        $this->token = $jwtResult['data']['access_token'];
+        $this->token = $resp['data']['access_token'];
         // 可根据当前项目是否有redis来缓存JwtToken
-        $this->expireAt = $jwtResult['data']['expire_at'];
+        $this->expireAt = $resp['data']['expire_at'];
     }
 
     /**
@@ -117,7 +122,6 @@ class GroupVerifyService
         return [
             "Authorization" => $this->token,
             "App-Code" => $this->config['app_code'],
-            'Content-Type' => 'application/json',
         ];
     }
 
@@ -126,13 +130,17 @@ class GroupVerifyService
         try {
             $header = $this->initHeader();
 
-
-            $response = Invoke( $url, $data, $header);
+            if (empty($data)) {
+                $response = Invoke( $url, null, $header);
+            } else {
+                $response = Invoke( $url, $data, $header);
+            }
 
             $result = json_decode($response, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new Exception('Invalid JSON: ' . json_last_error_msg());
             }
+
         } catch (Exception $e) {
             return ['code' => 500, "message" => $e->getMessage()];
         }

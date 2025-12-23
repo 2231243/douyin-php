@@ -31,6 +31,7 @@ class GenerateToken
                 'app_code' => $this->appCode,
                 'jwt_key' => $this->generateJwtKey()
             ]);
+
             $result = json_decode($resp, true);
 
         } catch (\Exception $e) {
