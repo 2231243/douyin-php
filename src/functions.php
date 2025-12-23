@@ -6,6 +6,12 @@ function Invoke($url, $data = null, $headers = null)
     $defaultHeaders = array(
         'Content-Type: application/json'
     );
+
+    if (!empty($headers)) {
+        foreach ($headers as $k => $v) {
+            $defaultHeaders[] = $k.': '. $v;
+        }
+    }
     curl_setopt_array($curl, array(
         CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
@@ -17,7 +23,7 @@ function Invoke($url, $data = null, $headers = null)
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS => is_array($data) ? json_encode($data) : $data,
-        CURLOPT_HTTPHEADER => is_array($headers) ? array_merge($headers, $defaultHeaders) : $defaultHeaders,
+        CURLOPT_HTTPHEADER => $defaultHeaders,
     ));
     $response = curl_exec($curl);
     curl_close($curl);

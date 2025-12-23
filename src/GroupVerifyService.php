@@ -101,9 +101,11 @@ class GroupVerifyService
      */
     private function accessJwtToken()
     {
+
         if (!is_null($this->cache)) {
             //尝试读取文件缓存token
             $token = $this->cache->get($this->config['app_code']);
+
             if (!empty($token)) {
                 $this->token = $token;
                 return;
@@ -111,6 +113,7 @@ class GroupVerifyService
         }
         try {
             $resp = $this->generateTokenService->authToken();
+
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
@@ -149,7 +152,6 @@ class GroupVerifyService
     {
         try {
             $header = $this->initHeader();
-
             if (empty($data)) {
                 $response = Invoke($url, null, $header);
             } else {

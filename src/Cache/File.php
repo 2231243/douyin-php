@@ -20,7 +20,7 @@ class File
 
     private function getFilename()
     {
-        return $this->dir . $this->file . ".txt";
+        return $this->dir .'/'. $this->file . ".txt";
     }
 
     public function set($cacheAuthToken)
@@ -31,7 +31,7 @@ class File
             'expire' => time() + $cacheAuthToken['expire'],
         ];
         file_put_contents($this->getFilename(),
-            json_encode($cache, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), FILE_APPEND) !== false;
+            json_encode($cache, JSON_UNESCAPED_UNICODE ).PHP_EOL, FILE_APPEND) !== false;
     }
 
     public function get($appCode)
