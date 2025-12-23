@@ -2,7 +2,10 @@
 
 namespace lff\DouyinPhp;
 
-use lff\DouyinPhp\request\Request;
+use lff\DouyinPhp\Cache\File;
+use lff\DouyinPhp\Constant\Cache;
+use lff\DouyinPhp\Constant\Method;
+use lff\DouyinPhp\Request\Request;
 use Exception;
 use RuntimeException;
 
@@ -19,12 +22,6 @@ class GroupVerifyService
     private $token;
     private $config;
 
-    /**
-     * Token过期时间（时间戳）
-     * @var int|null
-     */
-    private $expireAt;
-
 
     private $generateTokenService;
 
@@ -34,18 +31,24 @@ class GroupVerifyService
      */
     protected $serviceImpl;
 
-    public function __construct($config = null)
-    {
+    protected $cache = null;
 
+    public function __construct($config, $instance = "")
+    {
+        if ($instance != "" && $instance == Cache::File) {
+            $this->cache = new File();
+        }
         $this->config = $this->resolveConfig($config);
         $this->validateConfig();
-        $this->serviceImpl = constantMethod::getAllConstants();
+        $this->serviceImpl = Method::getAllConstants();
 
         $this->generateTokenService = new GenerateToken(
             $this->config['app_code'], $this->config['app_key'], $this->config['app_secret'], $this->config['auth_url']
         );
 
     }
+
+
     /**
      * 解析配置：支持多种注入方式
      * @param array|string|null $config
@@ -65,6 +68,7 @@ class GroupVerifyService
 
         throw new RuntimeException('未注入抖音团购配置！请传入配置数组/配置文件路径');
     }
+
     /**
      * 从文件加载配置
      * @param string $filePath
@@ -77,6 +81,7 @@ class GroupVerifyService
         }
         return require $filePath;
     }
+
     /**
      * 验证配置完整性
      * @throws RuntimeException
@@ -90,11 +95,20 @@ class GroupVerifyService
             }
         }
     }
+
     /**
      * @throws Exception
      */
     private function accessJwtToken()
     {
+        if (!is_null($this->cache)) {
+            //尝试读取文件缓存token
+            $token = $this->cache->get($this->config['app_code']);
+            if (!empty($token)) {
+                $this->token = $token;
+                return;
+            }
+        }
         try {
             $resp = $this->generateTokenService->authToken();
         } catch (Exception $e) {
@@ -105,8 +119,14 @@ class GroupVerifyService
         }
 
         $this->token = $resp['data']['access_token'];
-        // 可根据当前项目是否有redis来缓存JwtToken
-        $this->expireAt = $resp['data']['expire_at'];
+        if (!is_null($this->cache)) {
+            $this->cache->set([
+                'token' => $this->token,
+                'expire' => $resp['data']['expire_at'],
+                'app_code' => $this->config['app_code']
+            ]);
+        }
+
     }
 
     /**
@@ -131,9 +151,9 @@ class GroupVerifyService
             $header = $this->initHeader();
 
             if (empty($data)) {
-                $response = Invoke( $url, null, $header);
+                $response = Invoke($url, null, $header);
             } else {
-                $response = Invoke( $url, $data, $header);
+                $response = Invoke($url, $data, $header);
             }
 
             $result = json_decode($response, true);

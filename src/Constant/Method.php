@@ -1,8 +1,8 @@
 <?php
 
-namespace lff\DouyinPhp;
+namespace lff\DouyinPhp\Constant;
 
-class constantMethod
+class Method
 {
     const ShopAuth = "shop/auth-link";
     const ShopQuery = "shop/query-shop";

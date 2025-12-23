@@ -1,6 +1,6 @@
 <?php
 
-namespace lff\DouyinPhp\request;
+namespace lff\DouyinPhp\Request;
 
 class CouponTicketRequest extends Request
 {
